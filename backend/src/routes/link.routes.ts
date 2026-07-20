@@ -8,17 +8,21 @@ import {
 export const linkRoutes = new Elysia()
   .post(
     '/api/links',
-    ({ body, set }) => {
-      set.status = 201
-      return linkController.create(body.url)
+    async ({ body, set }) => {
+      const { reused, ...link } = await linkController.create(body.url)
+      set.status = reused ? 200 : 201
+      return link
     },
     {
       body: createLinkBodySchema,
-      response: { 201: createLinkResponseSchema },
+      response: {
+        200: createLinkResponseSchema,
+        201: createLinkResponseSchema,
+      },
     },
   )
-  .get('/:code', ({ params, redirect, set }) => {
-    const originalUrl = linkController.findOriginalUrl(params.code)
+  .get('/:code', async ({ params, redirect, set }) => {
+    const originalUrl = await linkController.findOriginalUrl(params.code)
 
     if (!originalUrl) {
       set.status = 404
