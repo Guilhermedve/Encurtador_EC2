@@ -24,7 +24,7 @@ spec:
         - name: ghcr-pull-secret
       containers:
         - name: frontend
-          image: ghcr.io/guilhermedve/encurtador_ec2-frontend:latest
+          image: ghcr.io/guilhermedve/Encurtador_EC2/frontend:latest
           ports:
             - name: http
               containerPort: 80
