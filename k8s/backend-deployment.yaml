@@ -27,9 +27,6 @@ spec:
             - name: http
               containerPort: 3000
               protocol: TCP
-          envFrom:
-            - secretRef:
-                name: encurtador-backend-env
           readinessProbe:
             httpGet:
               path: /health
