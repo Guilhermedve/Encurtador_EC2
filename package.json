@@ -1,0 +1,11 @@
+{
+  "name": "encurtador-ec2",
+  "private": true,
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "dev:backend": "bun run --cwd backend dev",
+    "dev:frontend": "bun run --cwd frontend dev",
+    "test": "bun run --cwd backend test",
+    "build": "bun run --cwd frontend build"
+  }
+}
