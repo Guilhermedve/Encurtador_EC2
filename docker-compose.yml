@@ -1,0 +1,30 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      FRONTEND_URL: http://localhost:8080
+      PUBLIC_BASE_URL: http://localhost:3000
+    ports:
+      - "3000:3000"
+    healthcheck:
+      test: ["CMD", "bun", "-e", "fetch('http://localhost:3000/health').then((r) => { if (!r.ok) process.exit(1) })"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        VITE_API_URL: ""
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "8080:80"
