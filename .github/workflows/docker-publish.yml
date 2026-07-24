@@ -33,6 +33,28 @@ jobs:
       - name: Build applications
         run: bun run build
 
+      - name: Build backend image
+        run: docker build --file backend/Dockerfile --tag encurtador-backend:test .
+
+      - name: Smoke test backend image
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --detach \
+            --name encurtador-backend-test \
+            --publish 127.0.0.1:33000:3000 \
+            encurtador-backend:test
+          trap 'docker logs encurtador-backend-test; docker rm --force encurtador-backend-test' EXIT
+
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:33000/health > /dev/null; then
+              exit 0
+            fi
+            sleep 1
+          done
+
+          exit 1
+
   publish:
     name: Publish images to GHCR
     needs: validate
