@@ -46,3 +46,34 @@ bun run build
 | `GET`  | `/health`    | Confirma que a API está disponível |
 | `POST` | `/api/links` | Cria um link curto em memória      |
 | `GET`  | `/:code`     | Redireciona para a URL original    |
+
+## Rate limiting
+
+O `POST /api/links` permite por padrão 10 tentativas por endereço IP em cada
+janela fixa de 60 segundos. Respostas aceitas incluem `RateLimit-Limit`,
+`RateLimit-Remaining` e `RateLimit-Reset`. Quando o limite é excedido, a API
+retorna `429 Too Many Requests` e também informa `Retry-After`.
+
+Configuração do backend:
+
+| Variável | Padrão | Finalidade |
+| --- | --- | --- |
+| `RATE_LIMIT_MAX` | `10` | Máximo de tentativas por IP e janela |
+| `RATE_LIMIT_WINDOW_SECONDS` | `60` | Duração da janela fixa |
+| `TRUST_PROXY` | `false` | Permite usar o primeiro IP de `X-Forwarded-For` |
+
+Ative `TRUST_PROXY=true` somente atrás de um proxy controlado que substitua o
+cabeçalho recebido do cliente. Os contadores ficam em memória e não são
+compartilhados entre processos ou réplicas; esta implementação pressupõe uma
+única instância do backend.
+
+## Implantação do backend em EC2
+
+A implantação Terraform executa somente o backend em uma EC2 com Caddy e
+atualização automática da imagem GHCR.
+
+- [Compose de produção](./deploy/ec2/README.md)
+- [Terraform EC2](./infra/terraform/README.md)
+
+O DNS é configurado manualmente no Cloudflare em modo DNS only. Nenhum
+`terraform apply` deve ser executado sem revisar o plan e os custos.

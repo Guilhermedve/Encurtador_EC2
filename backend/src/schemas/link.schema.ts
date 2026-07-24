@@ -11,3 +11,7 @@ export const createLinkResponseSchema = t.Object({
   originalUrl: t.String(),
   shortUrl: t.String(),
 })
+
+export const rateLimitErrorResponseSchema = t.Object({
+  error: t.String(),
+})
