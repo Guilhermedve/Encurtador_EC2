@@ -48,3 +48,14 @@ Desktop.ini
 
 # Local generated docs and implementation plans
 docs/
+
+# Terraform local state and runtime files
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfplan
+*.tfvars
+!*.tfvars.example
+.terraform.tfstate.lock.info
+crash.log
+crash.*.log
