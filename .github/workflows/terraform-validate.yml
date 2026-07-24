@@ -1,0 +1,43 @@
+name: Validate EC2 infrastructure
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/terraform-validate.yml"
+      - "deploy/ec2/**"
+      - "infra/terraform/**"
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/terraform-validate.yml"
+      - "deploy/ec2/**"
+      - "infra/terraform/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.8
+
+      - name: Check Terraform formatting
+        run: terraform -chdir=infra/terraform fmt -check -recursive
+
+      - name: Initialize Terraform without backend
+        run: terraform -chdir=infra/terraform init -backend=false
+
+      - name: Validate Terraform
+        run: terraform -chdir=infra/terraform validate
+
+      - name: Validate EC2 Compose
+        run: docker compose --env-file deploy/ec2/.env.example --file deploy/ec2/docker-compose.yml config

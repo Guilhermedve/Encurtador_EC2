@@ -24,3 +24,24 @@ terraform plan -out=ec2.tfplan
 
 O apply é uma ação com custo e deve ocorrer somente após revisão do plan.
 Faça backup seguro do state antes e depois de cada alteração.
+
+## Recursos criados
+
+- VPC e subnet pública;
+- Internet Gateway e rota;
+- Security Group com 22 restrito e 80/443 públicos;
+- Key Pair a partir da chave pública local;
+- EC2 Ubuntu 24.04 AMD64;
+- root EBS gp3 criptografado no tamanho padrão da AMI;
+- Elastic IP.
+
+## Depois do apply
+
+Use o output `cloudflare_record` para criar o registro `A` em DNS only.
+Depois da propagação, verifique:
+
+```sh
+curl --fail https://SEU_DOMINIO/health
+```
+
+O `terraform apply` cria recursos cobrados. Revise sempre o plan salvo antes.
