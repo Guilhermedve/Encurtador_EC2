@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { createShortLink } from '../services/api'
 
@@ -16,14 +16,34 @@ export function ShortLinkForm() {
   const [shortUrl, setShortUrl] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const [copyError, setCopyError] = useState('')
+  const [validationError, setValidationError] = useState(false)
+  const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function clearCopiedTimeout() {
+    if (copiedTimeoutRef.current !== null) {
+      clearTimeout(copiedTimeoutRef.current)
+      copiedTimeoutRef.current = null
+    }
+  }
+
+  useEffect(() => {
+    return () => clearCopiedTimeout()
+  }, [])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError('')
     setShortUrl('')
+    clearCopiedTimeout()
+    setCopied(false)
+    setCopyError('')
+    setValidationError(false)
 
     if (!isHttpsUrl(url)) {
-      setError('Informe uma URL HTTPS válida (começando com https://).')
+      setValidationError(true)
+      setError('Informe uma URL HTTPS válida (iniciando com https://).')
       return
     }
 
@@ -33,34 +53,94 @@ export function ShortLinkForm() {
       const result = await createShortLink(url)
       setShortUrl(result.shortUrl)
     } catch {
-      setError('Não foi possível encurtar o link.')
+      setError('Não foi possível encurtar o link. Verifique o backend ou tente novamente.')
     } finally {
       setLoading(false)
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit}>
-      <label htmlFor="url">URL para encurtar</label>
-      <input
-        id="url"
-        type="url"
-        value={url}
-        onChange={(event) => setUrl(event.target.value)}
-        placeholder="https://exemplo.com/pagina"
-        pattern="https://.*"
-        required
-      />
-      <button type="submit" disabled={loading}>
-        {loading ? 'Encurtando...' : 'Encurtar'}
-      </button>
+  async function handleCopy() {
+    if (!shortUrl) return
+    clearCopiedTimeout()
+    setCopied(false)
+    setCopyError('')
 
-      {error && <p role="alert">{error}</p>}
-      {shortUrl && (
-        <p>
-          Link criado: <a href={shortUrl}>{shortUrl}</a>
-        </p>
-      )}
-    </form>
+    try {
+      await navigator.clipboard.writeText(shortUrl)
+      setCopied(true)
+      clearCopiedTimeout()
+      copiedTimeoutRef.current = setTimeout(() => {
+        setCopied(false)
+        copiedTimeoutRef.current = null
+      }, 2000)
+    } catch {
+      setCopied(false)
+      setCopyError('Não foi possível copiar o link. Copie manualmente.')
+    }
+  }
+
+  return (
+    <div className="shortener-card">
+      <div className="card-header-bar">
+        <span>INPUT / HTTPS URL</span>
+        <span>V1.0</span>
+      </div>
+
+      <div className="card-body">
+        <form onSubmit={handleSubmit} noValidate>
+          <div className="form-group">
+            <label className="form-label" htmlFor="url">URL de destino</label>
+            <div className="input-container">
+              <input
+                id="url"
+                className="shortener-input"
+                type="url"
+                value={url}
+                onChange={(event) => setUrl(event.target.value)}
+                placeholder="https://sua-url-longa.com/exemplo"
+                pattern="https://.*"
+                required
+                autoComplete="off"
+                spellCheck="false"
+                aria-describedby={error ? 'url-error' : undefined}
+                aria-invalid={validationError || undefined}
+              />
+              <button className="shortener-button" type="submit" disabled={loading}>
+                {loading ? 'ENVIANDO...' : 'ENCURTAR'} <span aria-hidden="true">→</span>
+              </button>
+            </div>
+          </div>
+
+          {error && (
+            <div className="alert-error" id="url-error" role="alert">
+              <span aria-hidden="true">ERRO / </span>{error}
+            </div>
+          )}
+
+          {shortUrl && (
+            <div className="result-box" role="status" aria-live="polite">
+              <div className="result-label">LINK GERADO</div>
+              <div className="result-row">
+                <a className="result-link" href={shortUrl} target="_blank" rel="noreferrer">
+                  {shortUrl}
+                </a>
+                <button
+                  type="button"
+                  onClick={handleCopy}
+                  className={`copy-btn ${copied ? 'copied' : ''}`}
+                >
+                  {copied ? 'COPIADO ✓' : 'COPIAR'}
+                </button>
+              </div>
+              {copyError && (
+                <div className="copy-alert" role="alert">
+                  {copyError}
+                </div>
+              )}
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
   )
 }
