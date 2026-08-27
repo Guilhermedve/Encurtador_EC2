@@ -67,13 +67,13 @@ cabeçalho recebido do cliente. Os contadores ficam em memória e não são
 compartilhados entre processos ou réplicas; esta implementação pressupõe uma
 única instância do backend.
 
-## Implantação do backend em EC2
+## Implantação do backend em Azure VM
 
-A implantação Terraform executa somente o backend em uma EC2 com Caddy e
+A implantação Terraform executa somente o backend em uma VM Azure com Caddy e
 atualização automática da imagem GHCR.
 
-- [Compose de produção](./deploy/ec2/README.md)
-- [Terraform EC2](./infra/terraform/README.md)
+- [Compose de produção](./deploy/azure-vm/README.md)
+- [Terraform Azure VM](./infra/terraform/README.md)
 
 O DNS é configurado manualmente no Cloudflare em modo DNS only. Nenhum
 `terraform apply` deve ser executado sem revisar o plan e os custos.

@@ -1,11 +1,12 @@
-# Terraform EC2
+# Terraform Azure VM
 
 Esta configuração usa state local. Nunca versione `terraform.tfstate`,
-`terraform.tfvars`, arquivos de plan ou credenciais AWS.
+`terraform.tfvars`, arquivos de plan ou credenciais Azure.
 
 ## Pré-requisitos
 
-- credenciais AWS configuradas;
+- credenciais Azure configuradas (`az login` ou service principal via
+  `ARM_CLIENT_ID`/`ARM_CLIENT_SECRET`/`ARM_SUBSCRIPTION_ID`/`ARM_TENANT_ID`);
 - chave pública SSH existente;
 - domínio no Cloudflare;
 - Terraform 1.6 ou superior.
@@ -19,7 +20,7 @@ valores obrigatórios.
 terraform fmt -check -recursive
 terraform init
 terraform validate
-terraform plan -out=ec2.tfplan
+terraform plan -out=azure.tfplan
 ```
 
 O apply é uma ação com custo e deve ocorrer somente após revisão do plan.
@@ -27,13 +28,12 @@ Faça backup seguro do state antes e depois de cada alteração.
 
 ## Recursos criados
 
-- VPC e subnet pública;
-- Internet Gateway e rota;
-- Security Group com 22 restrito e 80/443 públicos;
-- Key Pair a partir da chave pública local;
-- EC2 Ubuntu 24.04 AMD64;
-- root EBS gp3 criptografado no tamanho padrão da AMI;
-- Elastic IP.
+- Resource Group;
+- Virtual Network e subnet pública;
+- Network Security Group com 22 restrito e 80/443 públicos;
+- Network Interface e IP público estático (SKU Standard);
+- VM Linux Ubuntu 24.04 (Canonical);
+- disco OS StandardSSD_LRS.
 
 ## Depois do apply
 

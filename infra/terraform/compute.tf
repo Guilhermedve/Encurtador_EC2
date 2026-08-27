@@ -1,7 +1,3 @@
-data "aws_ssm_parameter" "ubuntu_ami" {
-  name = "/aws/service/canonical/ubuntu/server/noble/stable/current/amd64/hvm/ebs-gp3/ami-id"
-}
-
 locals {
   deployment_env = <<-EOT
     DOMAIN_NAME=${var.domain_name}
@@ -12,56 +8,66 @@ locals {
   EOT
 
   cloud_init = templatefile("${path.module}/templates/cloud-init.sh.tftpl", {
-    compose_base64   = base64encode(file("${path.module}/../../deploy/ec2/docker-compose.yml"))
-    caddyfile_base64 = base64encode(file("${path.module}/../../deploy/ec2/Caddyfile"))
+    compose_base64   = base64encode(file("${path.module}/../../deploy/azure-vm/docker-compose.yml"))
+    caddyfile_base64 = base64encode(file("${path.module}/../../deploy/azure-vm/Caddyfile"))
     env_base64       = base64encode(local.deployment_env)
   })
 }
 
-resource "aws_key_pair" "deployer" {
-  key_name   = "${var.project_name}-${var.environment}"
-  public_key = file(pathexpand(var.ssh_public_key_path))
+resource "azurerm_public_ip" "backend" {
+  name                = "${var.project_name}-${var.environment}-backend"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+
+  tags = merge(local.common_tags, { Name = "${var.project_name}-${var.environment}-backend" })
 }
 
-resource "aws_instance" "backend" {
-  ami                         = nonsensitive(data.aws_ssm_parameter.ubuntu_ami.value)
-  instance_type               = var.instance_type
-  subnet_id                   = aws_subnet.public.id
-  vpc_security_group_ids      = [aws_security_group.backend.id]
-  key_name                    = aws_key_pair.deployer.key_name
-  associate_public_ip_address = false
+resource "azurerm_network_interface" "backend" {
+  name                = "${var.project_name}-${var.environment}-backend"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
 
-  user_data                   = local.cloud_init
-  user_data_replace_on_change = true
-
-  metadata_options {
-    http_endpoint               = "enabled"
-    http_tokens                 = "required"
-    http_put_response_hop_limit = 1
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = azurerm_subnet.public.id
+    private_ip_address_allocation = "Dynamic"
+    public_ip_address_id          = azurerm_public_ip.backend.id
   }
 
-  root_block_device {
-    volume_type           = "gp3"
-    encrypted             = true
-    delete_on_termination = true
-  }
-
-  credit_specification {
-    cpu_credits = "standard"
-  }
-
-  tags = {
-    Name = "${var.project_name}-${var.environment}-backend"
-  }
-
-  depends_on = [aws_route_table_association.public]
+  tags = merge(local.common_tags, { Name = "${var.project_name}-${var.environment}-backend" })
 }
 
-resource "aws_eip" "backend" {
-  domain   = "vpc"
-  instance = aws_instance.backend.id
+resource "azurerm_linux_virtual_machine" "backend" {
+  name                = "${var.project_name}-${var.environment}-backend"
+  resource_group_name = azurerm_resource_group.main.name
+  location            = azurerm_resource_group.main.location
+  size                = var.vm_size
+  admin_username      = "ubuntu"
 
-  tags = {
-    Name = "${var.project_name}-${var.environment}-backend"
+  network_interface_ids = [
+    azurerm_network_interface.backend.id,
+  ]
+
+  admin_ssh_key {
+    username   = "ubuntu"
+    public_key = file(pathexpand(var.ssh_public_key_path))
   }
+
+  os_disk {
+    caching              = "ReadWrite"
+    storage_account_type = "StandardSSD_LRS"
+  }
+
+  source_image_reference {
+    publisher = "Canonical"
+    offer     = "ubuntu-24_04-lts"
+    sku       = "server"
+    version   = "latest"
+  }
+
+  custom_data = base64encode(local.cloud_init)
+
+  tags = merge(local.common_tags, { Name = "${var.project_name}-${var.environment}-backend" })
 }
