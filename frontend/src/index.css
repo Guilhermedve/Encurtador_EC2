@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+* {
+  font-family: "Space Grotesk", system-ui, -apple-system, sans-serif;
+}
+
+html {
+  background: #000000;
+}
+
+body {
+  background: #000000;
+  color: #ffffff;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: #ffffff;
+  color: #000000;
+}
+
+/* spinner dots */
+@keyframes dot-bounce {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1); }
+}
