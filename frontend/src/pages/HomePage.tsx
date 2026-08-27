@@ -12,7 +12,7 @@ export function HomePage() {
       <Header />
 
       <main className="relative z-10 flex min-h-[calc(100vh-56px)] flex-col items-center justify-center px-5 pb-16 sm:px-6">
-        <div className="w-full max-w-[560px]">
+        <div className="w-full max-w-[760px]">
           <div
             className="mb-8 rounded-lg border bg-[rgba(13,13,13,0.85)] px-6 py-8 text-center backdrop-blur-[12px] sm:mb-10 sm:px-8 sm:py-10"
             style={{ borderColor: 'rgba(255,255,255,0.12)' }}
