@@ -1,5 +1,6 @@
 import type {
   LinkRepository,
+  SaveLinkResult,
   StoredLink,
 } from './link.repository'
 
@@ -15,9 +16,19 @@ export class InMemoryLinkRepository implements LinkRepository {
     return this.byCode.get(code) ?? null
   }
 
-  async save(link: StoredLink): Promise<StoredLink> {
+  async saveIfAbsent(link: StoredLink): Promise<SaveLinkResult> {
+    const existingByUrl = this.byOriginalUrl.get(link.originalUrl)
+    if (existingByUrl) {
+      return { status: 'url_exists', link: existingByUrl }
+    }
+
+    const existingByCode = this.byCode.get(link.code)
+    if (existingByCode) {
+      return { status: 'code_collision' }
+    }
+
     this.byOriginalUrl.set(link.originalUrl, link)
     this.byCode.set(link.code, link)
-    return link
+    return { status: 'created', link }
   }
 }

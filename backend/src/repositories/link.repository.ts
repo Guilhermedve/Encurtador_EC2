@@ -3,8 +3,13 @@ export interface StoredLink {
   originalUrl: string
 }
 
+export type SaveLinkResult =
+  | { status: 'created'; link: StoredLink }
+  | { status: 'url_exists'; link: StoredLink }
+  | { status: 'code_collision' }
+
 export interface LinkRepository {
   findByOriginalUrl(originalUrl: string): Promise<StoredLink | null>
   findByCode(code: string): Promise<StoredLink | null>
-  save(link: StoredLink): Promise<StoredLink>
+  saveIfAbsent(link: StoredLink): Promise<SaveLinkResult>
 }

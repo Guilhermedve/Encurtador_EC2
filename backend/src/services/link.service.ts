@@ -43,17 +43,13 @@ export class LinkService {
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
       const code = this.generate(CODE_SIZE)
 
-      const collision = await this.repository.findByCode(code)
-      if (collision) {
-        continue
-      }
+      const saved = await this.repository.saveIfAbsent({ code, originalUrl })
+      if (saved.status === 'code_collision') continue
 
-      const saved = await this.repository.save({ code, originalUrl })
       return {
-        code: saved.code,
-        originalUrl: saved.originalUrl,
-        shortUrl: this.buildShortUrl(saved.code),
-        reused: false,
+        ...saved.link,
+        shortUrl: this.buildShortUrl(saved.link.code),
+        reused: saved.status === 'url_exists',
       }
     }
 

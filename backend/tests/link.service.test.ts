@@ -5,6 +5,7 @@ import {
 } from '../src/services/link.service'
 import { InvalidHttpsUrlError } from '../src/utils/normalize-url'
 import { InMemoryLinkRepository } from '../src/repositories/in-memory-link.repository'
+import type { LinkRepository } from '../src/repositories/link.repository'
 
 function queuedGenerator(codes: string[]): () => string {
   let index = 0
@@ -43,7 +44,7 @@ describe('LinkService.create', () => {
 
   it('tenta novamente quando o código colide', async () => {
     const repository = new InMemoryLinkRepository()
-    await repository.save({
+    await repository.saveIfAbsent({
       code: 'AAAAAAAAA',
       originalUrl: 'https://ocupado.com',
     })
@@ -60,15 +61,12 @@ describe('LinkService.create', () => {
 
   it('falha depois de dez colisões', async () => {
     const repository = new InMemoryLinkRepository()
-    await repository.save({
+    await repository.saveIfAbsent({
       code: 'AAAAAAAAA',
       originalUrl: 'https://ocupado.com',
     })
 
-    const service = new LinkService(
-      repository,
-      queuedGenerator(['AAAAAAAAA']),
-    )
+    const service = new LinkService(repository, queuedGenerator(['AAAAAAAAA']))
 
     await expect(service.create('https://novo.com')).rejects.toThrow(
       CodeGenerationExhaustedError,
@@ -81,5 +79,72 @@ describe('LinkService.create', () => {
     await expect(service.create('http://exemplo.com')).rejects.toThrow(
       InvalidHttpsUrlError,
     )
+  })
+
+  it('lida com um vencedor concorrente retornando url_exists', async () => {
+    const concurrentWinner: LinkRepository = {
+      findByOriginalUrl: async () => null,
+      findByCode: async () => null,
+      saveIfAbsent: async () => ({
+        status: 'url_exists',
+        link: { code: 'BBBBBBBBB', originalUrl: 'https://exemplo.com' },
+      }),
+    }
+
+    const service = new LinkService(
+      concurrentWinner,
+      queuedGenerator(['AAAAAAAAA']),
+    )
+
+    const result = await service.create('https://exemplo.com')
+
+    expect(result.reused).toBe(true)
+    expect(result.code).toBe('BBBBBBBBB')
+  })
+})
+
+describe('InMemoryLinkRepository.saveIfAbsent', () => {
+  it('returns created for a fresh link', async () => {
+    const repository = new InMemoryLinkRepository()
+
+    const result = await repository.saveIfAbsent({
+      code: 'AAAAAAAAA',
+      originalUrl: 'https://novo.com',
+    })
+
+    expect(result.status).toBe('created')
+  })
+
+  it('returns url_exists when the URL is already stored', async () => {
+    const repository = new InMemoryLinkRepository()
+    await repository.saveIfAbsent({
+      code: 'AAAAAAAAA',
+      originalUrl: 'https://novo.com',
+    })
+
+    const result = await repository.saveIfAbsent({
+      code: 'BBBBBBBBB',
+      originalUrl: 'https://novo.com',
+    })
+
+    expect(result.status).toBe('url_exists')
+    if (result.status === 'url_exists') {
+      expect(result.link.code).toBe('AAAAAAAAA')
+    }
+  })
+
+  it('returns code_collision when the code is occupied', async () => {
+    const repository = new InMemoryLinkRepository()
+    await repository.saveIfAbsent({
+      code: 'AAAAAAAAA',
+      originalUrl: 'https://um.com',
+    })
+
+    const result = await repository.saveIfAbsent({
+      code: 'AAAAAAAAA',
+      originalUrl: 'https://outro.com',
+    })
+
+    expect(result.status).toBe('code_collision')
   })
 })
