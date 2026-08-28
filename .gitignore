@@ -47,7 +47,8 @@ Thumbs.db
 Desktop.ini
 
 # Local generated docs and implementation plans
-docs/
+docs/*
+!docs/superpowers/
 
 # Terraform local state and runtime files
 **/.terraform/*

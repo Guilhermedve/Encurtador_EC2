@@ -1,11 +1,11 @@
-# Backend EC2 Compose
+# Backend Azure VM Compose
 
 Este Compose executa somente o backend do encurtador, Caddy e Watchtower.
 
 ## Configuração
 
 Copie `.env.example` para `.env` e substitua `DOMAIN_NAME`. O registro `A`
-do Cloudflare deve ficar em DNS only e apontar para o Elastic IP.
+do Cloudflare deve ficar em DNS only e apontar para o IP público da VM.
 
 ## Operação
 

@@ -1,11 +1,11 @@
-output "instance_id" {
-  description = "EC2 instance ID."
-  value       = aws_instance.backend.id
+output "vm_id" {
+  description = "Azure VM resource ID."
+  value       = azurerm_linux_virtual_machine.backend.id
 }
 
-output "elastic_ip" {
-  description = "Elastic IP to configure in Cloudflare."
-  value       = aws_eip.backend.public_ip
+output "public_ip" {
+  description = "Public IP to configure in Cloudflare."
+  value       = azurerm_public_ip.backend.ip_address
 }
 
 output "api_url" {
@@ -15,7 +15,7 @@ output "api_url" {
 
 output "ssh_command" {
   description = "SSH command using the private key matching the configured public key."
-  value       = "ssh -i \"${trimsuffix(pathexpand(var.ssh_public_key_path), ".pub")}\" ubuntu@${aws_eip.backend.public_ip}"
+  value       = "ssh -i \"${trimsuffix(pathexpand(var.ssh_public_key_path), ".pub")}\" ubuntu@${azurerm_public_ip.backend.ip_address}"
 }
 
 output "cloudflare_record" {
@@ -23,7 +23,7 @@ output "cloudflare_record" {
   value = {
     type    = "A"
     name    = var.domain_name
-    content = aws_eip.backend.public_ip
+    content = azurerm_public_ip.backend.ip_address
     proxied = false
   }
 }

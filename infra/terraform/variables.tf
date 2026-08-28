@@ -1,7 +1,7 @@
-variable "aws_region" {
-  description = "AWS region for all resources."
+variable "location" {
+  description = "Azure region for all resources."
   type        = string
-  default     = "us-east-1"
+  default     = "eastus"
 }
 
 variable "project_name" {
@@ -21,10 +21,10 @@ variable "environment" {
   default     = "production"
 }
 
-variable "instance_type" {
-  description = "EC2 instance type."
+variable "vm_size" {
+  description = "Azure VM size."
   type        = string
-  default     = "t3.micro"
+  default     = "Standard_B1s"
 }
 
 variable "domain_name" {
@@ -66,7 +66,7 @@ variable "ssh_allowed_cidr" {
 }
 
 variable "backend_image" {
-  description = "Public GHCR image consumed by the EC2 Compose stack."
+  description = "Public GHCR image consumed by the Azure VM Compose stack."
   type        = string
   default     = "ghcr.io/guilhermedve/encurtador_ec2-backend:latest"
 }
@@ -111,7 +111,7 @@ variable "watchtower_poll_seconds" {
 }
 
 variable "extra_tags" {
-  description = "Additional AWS resource tags."
+  description = "Additional Azure resource tags."
   type        = map(string)
   default     = {}
 }

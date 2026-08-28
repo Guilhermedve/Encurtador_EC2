@@ -1,4 +1,4 @@
-name: encurtador-ec2
+name: encurtador-azure-vm
 
 services:
   backend:
