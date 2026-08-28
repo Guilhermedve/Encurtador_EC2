@@ -1,5 +1,5 @@
 import { Elysia } from 'elysia'
-import { linkController } from '../controllers/link.controller'
+import type { LinkController } from '../controllers/link.controller'
 import type { RateLimiter } from '../services/rate-limit.service'
 import {
   createLinkBodySchema,
@@ -9,11 +9,13 @@ import {
 import { resolveClientIp } from '../utils/client-ip'
 
 export interface LinkRoutesOptions {
+  controller: LinkController
   rateLimiter: RateLimiter
   trustProxy: boolean
 }
 
 export function createLinkRoutes({
+  controller,
   rateLimiter,
   trustProxy,
 }: LinkRoutesOptions) {
@@ -21,7 +23,7 @@ export function createLinkRoutes({
     .post(
       '/api/links',
       async ({ body, set }) => {
-        const { reused, ...link } = await linkController.create(body.url)
+        const { reused, ...link } = await controller.create(body.url)
         set.status = reused ? 200 : 201
         return link
       },
@@ -59,7 +61,7 @@ export function createLinkRoutes({
       },
     )
     .get('/:code', async ({ params, redirect, set }) => {
-      const originalUrl = await linkController.findOriginalUrl(params.code)
+      const originalUrl = await controller.findOriginalUrl(params.code)
 
       if (!originalUrl) {
         set.status = 404

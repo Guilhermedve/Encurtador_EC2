@@ -1,7 +1,6 @@
 import { env } from '../config/env'
 import { generateCode } from '../utils/generate-code'
 import { normalizeHttpsUrl } from '../utils/normalize-url'
-import { InMemoryLinkRepository } from '../repositories/in-memory-link.repository'
 import type { LinkRepository } from '../repositories/link.repository'
 
 export class CodeGenerationExhaustedError extends Error {
@@ -65,5 +64,3 @@ export class LinkService {
     return `${env.publicBaseUrl}/${code}`
   }
 }
-
-export const linkService = new LinkService(new InMemoryLinkRepository())

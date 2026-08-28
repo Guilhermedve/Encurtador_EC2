@@ -1,11 +1,10 @@
-import { linkService } from '../services/link.service'
+import type { LinkService } from '../services/link.service'
 
-export const linkController = {
-  create(originalUrl: string) {
-    return linkService.create(originalUrl)
-  },
-
-  findOriginalUrl(code: string) {
-    return linkService.findOriginalUrl(code)
-  },
+export function createLinkController(linkService: LinkService) {
+  return {
+    create: (originalUrl: string) => linkService.create(originalUrl),
+    findOriginalUrl: (code: string) => linkService.findOriginalUrl(code),
+  }
 }
+
+export type LinkController = ReturnType<typeof createLinkController>
