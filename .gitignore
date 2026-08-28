@@ -49,6 +49,7 @@ Desktop.ini
 # Local generated docs and implementation plans
 docs/*
 !docs/superpowers/
+docs/superpowers/plans/
 
 # Terraform local state and runtime files
 **/.terraform/*
