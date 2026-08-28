@@ -9,6 +9,8 @@
     "test": "bun test"
   },
   "dependencies": {
+    "@azure/data-tables": "13.3.2",
+    "@azure/identity": "4.13.2",
     "@elysiajs/cors": "^1.4.0",
     "elysia": "^1.4.9"
   },
