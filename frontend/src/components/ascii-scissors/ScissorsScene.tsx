@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { AsciiField } from './AsciiField'
 import {
   OPEN_BLADE_ANGLE,
-  getCutAnimationFrame,
+  getCutAnimationFrameInto,
   normalizeRadians,
 } from './cutAnimation'
 import {
@@ -40,6 +40,11 @@ export function ScissorsScene({
   const modelRef = useRef<ScissorsModelHandle>(null)
   const ambientPhaseRef = useRef(0)
   const activeCutRef = useRef<ActiveCut | null>(null)
+  const cutFrameRef = useRef({
+    phase: 'closing' as const,
+    bladeAngle: OPEN_BLADE_ANGLE,
+    alignment: 0,
+  })
   const lastStartedRequestRef = useRef(0)
   const onCutCompleteRef = useRef(onCutComplete)
 
@@ -94,7 +99,10 @@ export function ScissorsScene({
         activeCut.startY = normalizeRadians(scene.rotation.y)
       }
 
-      const frame = getCutAnimationFrame(nowMs - activeCut.startedAtMs)
+      const frame = getCutAnimationFrameInto(
+        nowMs - activeCut.startedAtMs,
+        cutFrameRef.current,
+      )
       model.setBladeAngle(frame.bladeAngle)
       scene.rotation.x = THREE.MathUtils.lerp(
         activeCut.startX,

@@ -44,48 +44,55 @@ export function canPlayCut({
   return visible && !reducedMotion && webglAvailable
 }
 
-export function getCutAnimationFrame(elapsedMs: number): CutAnimationFrame {
+export function getCutAnimationFrameInto(
+  elapsedMs: number,
+  target: CutAnimationFrame = {
+    phase: 'closing',
+    bladeAngle: OPEN_BLADE_ANGLE,
+    alignment: 0,
+  },
+): CutAnimationFrame {
   const elapsed = Math.max(0, elapsedMs)
 
   if (elapsed < CUT_TIMING.closeMs) {
     const progress = clamp01(elapsed / CUT_TIMING.closeMs)
-    return {
-      phase: 'closing',
-      bladeAngle: lerp(
+    target.phase = 'closing'
+    target.bladeAngle = lerp(
         OPEN_BLADE_ANGLE,
         CLOSED_BLADE_ANGLE,
         easeInCubic(progress),
-      ),
-      alignment: easeInOutCubic(progress),
-    }
+      )
+    target.alignment = easeInOutCubic(progress)
+    return target
   }
 
   const openStart = CUT_TIMING.closeMs + CUT_TIMING.holdMs
 
   if (elapsed < openStart) {
-    return {
-      phase: 'holding',
-      bladeAngle: CLOSED_BLADE_ANGLE,
-      alignment: 1,
-    }
+    target.phase = 'holding'
+    target.bladeAngle = CLOSED_BLADE_ANGLE
+    target.alignment = 1
+    return target
   }
 
   if (elapsed < CUT_TIMING.totalMs) {
     const progress = clamp01((elapsed - openStart) / CUT_TIMING.openMs)
-    return {
-      phase: 'opening',
-      bladeAngle: lerp(
+    target.phase = 'opening'
+    target.bladeAngle = lerp(
         CLOSED_BLADE_ANGLE,
         OPEN_BLADE_ANGLE,
         easeInOutCubic(progress),
-      ),
-      alignment: 1,
-    }
+      )
+    target.alignment = 1
+    return target
   }
 
-  return {
-    phase: 'complete',
-    bladeAngle: OPEN_BLADE_ANGLE,
-    alignment: 1,
-  }
+  target.phase = 'complete'
+  target.bladeAngle = OPEN_BLADE_ANGLE
+  target.alignment = 1
+  return target
+}
+
+export function getCutAnimationFrame(elapsedMs: number): CutAnimationFrame {
+  return getCutAnimationFrameInto(elapsedMs)
 }

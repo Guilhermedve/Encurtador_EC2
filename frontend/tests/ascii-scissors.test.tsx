@@ -13,6 +13,7 @@ import {
   OPEN_BLADE_ANGLE,
   canPlayCut,
   getCutAnimationFrame,
+  getCutAnimationFrameInto,
   normalizeRadians,
 } from '../src/components/ascii-scissors/cutAnimation'
 
@@ -108,5 +109,12 @@ describe('ASCII scissors cut animation', () => {
     expect(canPlayCut({ visible: false, reducedMotion: false, webglAvailable: true })).toBe(false)
     expect(canPlayCut({ visible: true, reducedMotion: true, webglAvailable: true })).toBe(false)
     expect(canPlayCut({ visible: true, reducedMotion: false, webglAvailable: false })).toBe(false)
+  })
+
+  test('writes frames into a reusable object', () => {
+    const frame = getCutAnimationFrameInto(0)
+
+    expect(getCutAnimationFrameInto(210, frame)).toBe(frame)
+    expect(frame).toEqual(getCutAnimationFrame(210))
   })
 })
