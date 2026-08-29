@@ -5,48 +5,42 @@ import { Header } from '../src/components/Header'
 import { SiteFooter } from '../src/components/SiteFooter'
 
 describe('recruiter-facing project section', () => {
-  test('renders the factual stack and same-page navigation', () => {
+  test('renders the project objective, architecture, ci/cd pipeline, and decisions', () => {
     const markup = renderToStaticMarkup(
       <>
         <Header />
         <AboutSection />
-        <SiteFooter />
       </>,
     )
 
     expect(markup).toContain('href="#sobre"')
     expect(markup).toContain('id="sobre"')
-    expect(markup).toContain('SOBRE O PROJETO')
-    expect(markup).toContain('[ URL_EXTENSA ] ----//----&gt; [ EC2.SH ]')
+    expect(markup).toContain('[ SOBRE O PROJETO ]')
 
-    for (const label of ['INTERFACE', 'API', 'DADOS', 'INFRA']) {
-      expect(markup).toContain(label)
-    }
+    expect(markup).toContain('OBJETIVO')
+    expect(markup).toContain(
+      'Encurtador de URLs desenvolvido para explorar uma arquitetura full stack distribuída na Azure.',
+    )
 
-    for (const technology of [
-      'REACT 19',
-      'TYPESCRIPT 5.7',
-      'VITE 6',
-      'TAILWIND CSS 4',
-      'THREE.JS',
-      'REACT THREE FIBER',
-      'DREI / ASCII RENDERER',
-      'BUN',
-      'ELYSIA',
-      'AZURE TABLE STORAGE',
-      'MEMORY REPOSITORY (DEV)',
-      'AZURE STATIC WEB APPS',
-      'AZURE CONTAINER APPS',
-      'DOCKER / GHCR',
-      'GITHUB ACTIONS',
-    ]) {
-      expect(markup).toContain(technology)
-    }
+    expect(markup).toContain('ARQUITETURA')
+    expect(markup).toContain('Browser')
+    expect(markup).toContain('Azure Static Web Apps')
+    expect(markup).toContain('React + TypeScript')
+    expect(markup).toContain('API')
+    expect(markup).toContain('Azure Container Apps')
+    expect(markup).toContain('Azure Table Storage')
 
-    expect(markup).not.toContain('P' + '5.JS / CANVAS')
+    expect(markup).toContain('CI/CD')
+    expect(markup).toContain('GitHub → GitHub Actions → GHCR → Azure')
+
+    expect(markup).toContain('DECISÕES')
+    expect(markup).toContain('Frontend e API implantados separadamente')
+    expect(markup).toContain('API containerizada com Docker')
+    expect(markup).toContain('Persistência gerenciada na Azure')
+    expect(markup).toContain('Pipeline automatizado de build e deploy')
   })
 
-  test('renders two safe external LinkedIn links', () => {
+  test('renders safe external LinkedIn and GitHub repository links', () => {
     const markup = renderToStaticMarkup(
       <>
         <AboutSection />
@@ -54,10 +48,11 @@ describe('recruiter-facing project section', () => {
       </>,
     )
     const linkedinUrl = 'https://www.linkedin.com/in/guilhermecostadve/'
+    const repoUrl = 'https://github.com/Guilhermedve/Encurtador_EC2'
 
     expect(markup.split(`href="${linkedinUrl}"`)).toHaveLength(3)
-    expect(markup.split('target="_blank"')).toHaveLength(3)
-    expect(markup.split('rel="noreferrer"')).toHaveLength(3)
-    expect(markup).toContain('abre em nova aba')
+    expect(markup.split(`href="${repoUrl}"`)).toHaveLength(2)
+    expect(markup.split('target="_blank"')).toHaveLength(4)
+    expect(markup.split('rel="noreferrer"')).toHaveLength(4)
   })
 })
