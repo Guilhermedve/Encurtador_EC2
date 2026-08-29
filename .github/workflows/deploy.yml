@@ -68,8 +68,8 @@ jobs:
 
       - name: Assert backend image runs as non-root
         run: |
-        IMG_UID=$(docker run --rm --entrypoint id encurtador-backend:test -u)
-        if [ "$IMG_UID" = "0" ]; then echo "Backend image must not run as root"; exit 1; fi
+          IMG_UID=$(docker run --rm --entrypoint id encurtador-backend:test -u)
+          if [ "$IMG_UID" = "0" ]; then echo "Backend image must not run as root"; exit 1; fi
 
       - name: Create Azurite runtime table
         env:
