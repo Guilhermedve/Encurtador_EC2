@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from 'react'
 import { AboutSection } from '../components/AboutSection'
 import { AsciiFlowTrail } from '../components/ascii-flow-trail/AsciiFlowTrail'
 import { AsciiScissorsHero } from '../components/ascii-scissors/AsciiScissorsHero'
@@ -6,8 +7,44 @@ import { DitheringOverlay } from '../components/DitheringOverlay'
 import { Header } from '../components/Header'
 import { SiteFooter } from '../components/SiteFooter'
 import { UrlShortenerCard } from '../components/UrlShortenerCard'
+import { CUT_TIMING } from '../components/ascii-scissors/cutAnimation'
+
+type CutState = {
+  requestId: number
+  cutting: boolean
+}
 
 export function HomePage() {
+  const [cutState, setCutState] = useState<CutState>({
+    requestId: 0,
+    cutting: false,
+  })
+
+  const handleShortenSuccess = useCallback(() => {
+    setCutState((current) => ({
+      requestId: current.requestId + 1,
+      cutting: true,
+    }))
+  }, [])
+
+  const handleCutComplete = useCallback((requestId: number) => {
+    setCutState((current) =>
+      current.requestId === requestId
+        ? { ...current, cutting: false }
+        : current,
+    )
+  }, [])
+
+  useEffect(() => {
+    if (!cutState.cutting) return
+
+    const timeoutId = window.setTimeout(() => {
+      handleCutComplete(cutState.requestId)
+    }, CUT_TIMING.watchdogMs)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [cutState.cutting, cutState.requestId, handleCutComplete])
+
   return (
     <div className="relative min-h-screen bg-black text-white">
       <DitheringOverlay />
@@ -40,10 +77,17 @@ export function HomePage() {
               </p>
             </div>
 
-            <UrlShortenerCard />
+            <UrlShortenerCard
+              cutting={cutState.cutting}
+              onShortenSuccess={handleShortenSuccess}
+            />
           </div>
 
-          <AsciiScissorsHero />
+          <AsciiScissorsHero
+            cutRequestId={cutState.requestId}
+            cutting={cutState.cutting}
+            onCutComplete={handleCutComplete}
+          />
         </div>
       </main>
 
