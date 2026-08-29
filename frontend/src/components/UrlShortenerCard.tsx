@@ -12,7 +12,29 @@ function isHttpsUrl(value: string): boolean {
   }
 }
 
-export function UrlShortenerCard() {
+type UrlShortenerCardProps = {
+  cutting: boolean
+  onShortenSuccess: () => void
+}
+
+export function canSubmitShorten(loading: boolean, cutting: boolean): boolean {
+  return !loading && !cutting
+}
+
+export async function submitShortenRequest(
+  url: string,
+  createLink: typeof createShortLink,
+  onSuccess: (result: Awaited<ReturnType<typeof createShortLink>>) => void,
+) {
+  const result = await createLink(url)
+  onSuccess(result)
+  return result
+}
+
+export function UrlShortenerCard({
+  cutting,
+  onShortenSuccess,
+}: UrlShortenerCardProps) {
   const [url, setUrl] = useState('')
   const [shortUrl, setShortUrl] = useState('')
   const [error, setError] = useState('')
@@ -20,6 +42,8 @@ export function UrlShortenerCard() {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (!canSubmitShorten(loading, cutting)) return
+
     setError('')
     setShortUrl('')
 
@@ -30,8 +54,14 @@ export function UrlShortenerCard() {
 
     setLoading(true)
     try {
-      const result = await createShortLink(url)
-      setShortUrl(result.shortUrl)
+      await submitShortenRequest(
+        url,
+        createShortLink,
+        (result) => {
+          setShortUrl(result.shortUrl)
+          onShortenSuccess()
+        },
+      )
     } catch {
       setError('Não foi possível encurtar o link.')
     } finally {
@@ -80,8 +110,8 @@ export function UrlShortenerCard() {
 
           <button
             type="submit"
-            disabled={loading}
-            aria-busy={loading}
+            disabled={loading || cutting}
+            aria-busy={loading || cutting}
             className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-sm border border-white bg-white px-6 text-sm font-bold uppercase tracking-[0.08em] text-black transition-colors duration-200 hover:bg-black hover:text-white hover:border-white disabled:opacity-60 cursor-pointer disabled:cursor-not-allowed"
           >
             {loading ? (
@@ -90,6 +120,8 @@ export function UrlShortenerCard() {
                 <span className="h-1.5 w-1.5 rounded-full bg-current" style={{ animation: 'dot-bounce 1s infinite 150ms' }} />
                 <span className="h-1.5 w-1.5 rounded-full bg-current" style={{ animation: 'dot-bounce 1s infinite 300ms' }} />
               </span>
+            ) : cutting ? (
+              'Cortando...'
             ) : (
               <>Encurtar <span aria-hidden>→</span></>
             )}
