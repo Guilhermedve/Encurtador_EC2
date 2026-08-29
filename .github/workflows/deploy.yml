@@ -109,7 +109,7 @@ jobs:
       contents: read
       packages: write
     env:
-      GHCR_BACKEND_IMAGE: ${{ vars.GHCR_BACKEND_IMAGE || format('ghcr.io/{0}-backend', github.repository) }}
+      GHCR_BACKEND_IMAGE: ${{ vars.GHCR_BACKEND_IMAGE || format('ghcr.io/{0}-backend', toLower(github.repository)) }}
     steps:
       - uses: actions/checkout@v4
 
