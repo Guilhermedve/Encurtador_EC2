@@ -49,7 +49,7 @@ export function AsciiScissorsHero() {
         fallback={<ScissorsFallback />}
         frameloop={animate ? 'always' : 'demand'}
         dpr={[1, 1.5]}
-        camera={{ position: [0, 0, 6.5], fov: 42, near: 0.1, far: 30 }}
+        camera={{ position: [0, 0, 6.3], fov: 42, near: 0.1, far: 30 }}
         gl={{ alpha: true, antialias: false, powerPreference: 'high-performance' }}
       >
         <ScissorsScene animate={animate} resolution={compact ? 0.12 : 0.16} />

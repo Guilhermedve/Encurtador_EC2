@@ -27,7 +27,7 @@ function ScissorHalf({ rotation, z }: ScissorHalfProps) {
 
 export function ScissorsModel() {
   return (
-    <group rotation={[0, 0, -0.08]} scale={0.88}>
+    <group position={[-0.75, 0, 0]} rotation={[0, 0, -0.08]} scale={1.02}>
       <ScissorHalf rotation={OPEN_ANGLE} z={0.08} />
       <ScissorHalf rotation={-OPEN_ANGLE} z={-0.08} />
       <mesh rotation={[Math.PI / 2, 0, 0]}>
