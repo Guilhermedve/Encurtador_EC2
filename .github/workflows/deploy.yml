@@ -72,6 +72,7 @@ jobs:
           if [ "$IMG_UID" = "0" ]; then echo "Backend image must not run as root"; exit 1; fi
 
       - name: Create Azurite runtime table
+        working-directory: backend
         env:
           AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;"
         run: |
