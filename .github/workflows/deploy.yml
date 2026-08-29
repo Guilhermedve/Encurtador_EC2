@@ -288,7 +288,7 @@ jobs:
         env:
           BACKEND_PUBLIC_URL: ${{ vars.BACKEND_PUBLIC_URL }}
         run: |
-          CODE=$(curl -s -X POST "$BACKEND_PUBLIC_URL/api/links" -H "Content-Type: application/json" -d '{"url":"https://example.com/azure-deployment-smoke"}' | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).code)}catch{console.log('')}})")
+          CODE=$(curl -s -X POST "$BACKEND_PUBLIC_URL/api/links" -H "Content-Type: application/json" -d '{"url":"https://example.com/azure-deployment-smoke"}' | bun -e "const t=await Bun.stdin.text(); try { console.log(JSON.parse(t).code ?? '') } catch { console.log('') }")
           REDIRECT=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$BACKEND_PUBLIC_URL/$CODE")
           STATUS=${REDIRECT%% *}
           LOCATION=${REDIRECT#* }
