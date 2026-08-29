@@ -108,6 +108,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      GHCR_BACKEND_IMAGE: ${{ vars.GHCR_BACKEND_IMAGE || format('ghcr.io/{0}-backend', github.repository) }}
     steps:
       - uses: actions/checkout@v4
 
@@ -130,7 +132,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ${{ vars.GHCR_BACKEND_IMAGE }}
+          images: ${{ env.GHCR_BACKEND_IMAGE }}
 
       - name: Compute image reference
         id: ref
