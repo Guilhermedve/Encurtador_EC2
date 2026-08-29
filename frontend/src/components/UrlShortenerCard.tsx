@@ -17,6 +17,20 @@ type UrlShortenerCardProps = {
   onShortenSuccess: () => void
 }
 
+export function canSubmitShorten(loading: boolean, cutting: boolean): boolean {
+  return !loading && !cutting
+}
+
+export async function submitShortenRequest(
+  url: string,
+  createLink: typeof createShortLink,
+  onSuccess: (result: Awaited<ReturnType<typeof createShortLink>>) => void,
+) {
+  const result = await createLink(url)
+  onSuccess(result)
+  return result
+}
+
 export function UrlShortenerCard({
   cutting,
   onShortenSuccess,
@@ -28,7 +42,7 @@ export function UrlShortenerCard({
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (loading || cutting) return
+    if (!canSubmitShorten(loading, cutting)) return
 
     setError('')
     setShortUrl('')
@@ -40,9 +54,14 @@ export function UrlShortenerCard({
 
     setLoading(true)
     try {
-      const result = await createShortLink(url)
-      setShortUrl(result.shortUrl)
-      onShortenSuccess()
+      await submitShortenRequest(
+        url,
+        createShortLink,
+        (result) => {
+          setShortUrl(result.shortUrl)
+          onShortenSuccess()
+        },
+      )
     } catch {
       setError('Não foi possível encurtar o link.')
     } finally {

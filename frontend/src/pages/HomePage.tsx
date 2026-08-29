@@ -14,6 +14,14 @@ type CutState = {
   cutting: boolean
 }
 
+export function startCut(state: CutState): CutState {
+  return { requestId: state.requestId + 1, cutting: true }
+}
+
+export function completeCut(state: CutState, requestId: number): CutState {
+  return state.requestId === requestId ? { ...state, cutting: false } : state
+}
+
 export function HomePage() {
   const [cutState, setCutState] = useState<CutState>({
     requestId: 0,
@@ -21,18 +29,11 @@ export function HomePage() {
   })
 
   const handleShortenSuccess = useCallback(() => {
-    setCutState((current) => ({
-      requestId: current.requestId + 1,
-      cutting: true,
-    }))
+    setCutState(startCut)
   }, [])
 
   const handleCutComplete = useCallback((requestId: number) => {
-    setCutState((current) =>
-      current.requestId === requestId
-        ? { ...current, cutting: false }
-        : current,
-    )
+    setCutState((current) => completeCut(current, requestId))
   }, [])
 
   useEffect(() => {

@@ -127,7 +127,7 @@ export function AsciiScissorsHero({
         >
           <ScissorsScene
             animate={visible && !reducedMotion}
-            resolution={compact ? 0.12 : 0.17}
+            resolution={compact ? 0.12 : 0.16}
             cutRequestId={activeSceneRequestId}
             onCutComplete={handleSceneCutComplete}
           />
