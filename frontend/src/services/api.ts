@@ -2,10 +2,7 @@ import type { ShortLink } from '../types/link'
 
 const developmentFallback = import.meta.env.DEV ? 'http://localhost:3000' : undefined
 
-const rawApiUrl =
-  import.meta.env.VITE_API_URL ??
-  developmentFallback ??
-  (import.meta.env.PROD === true ? undefined : 'http://localhost:3000')
+const rawApiUrl = import.meta.env.VITE_API_URL ?? developmentFallback
 
 if (!rawApiUrl) {
   throw new Error('VITE_API_URL is required for production builds')

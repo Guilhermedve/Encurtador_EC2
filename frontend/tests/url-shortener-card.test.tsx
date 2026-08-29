@@ -1,12 +1,19 @@
-import { describe, expect, test } from 'bun:test'
+import { describe, expect, mock, test } from 'bun:test'
 import { renderToStaticMarkup } from 'react-dom/server'
-import {
+
+mock.module('../src/services/api', () => ({
+  createShortLink: async () => {
+    throw new Error('createShortLink is not used by this test module')
+  },
+}))
+
+const {
   canSubmitShorten,
   submitShortenRequest,
   UrlShortenerCard,
-} from '../src/components/UrlShortenerCard'
-import { completeCut, startCut } from '../src/pages/HomePage'
-import { CUT_TIMING } from '../src/components/ascii-scissors/cutAnimation'
+} = await import('../src/components/UrlShortenerCard')
+const { completeCut, startCut } = await import('../src/pages/HomePage')
+const { CUT_TIMING } = await import('../src/components/ascii-scissors/cutAnimation')
 
 describe('URL shortener cutting state', () => {
   test('blocks submission and announces cutting after API success', () => {

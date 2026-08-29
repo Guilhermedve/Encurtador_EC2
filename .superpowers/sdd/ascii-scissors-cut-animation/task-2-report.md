@@ -65,3 +65,22 @@ Implemented all reported fixes without adding dependencies or expanding the feat
 ### Concerns
 
 - Browser-specific GPU, renderer context-loss, and real timer/request lifecycle behavior remain unvalidated because this harness has no browser portal.
+
+## Final Scope Regression Fix
+
+### Status
+
+Complete. Restored `frontend/src/services/api.ts` exactly to the base implementation and isolated the SSR-focused test from service module initialization with a test-local Bun module mock. No production behavior, dependencies, or additional files were changed.
+
+### Verification
+
+- `bun run --cwd frontend test tests/url-shortener-card.test.tsx` with `VITE_API_URL` unset: 7 passed, 0 failed.
+- `bun run --cwd frontend test` with `VITE_API_URL` unset: 20 passed, 0 failed.
+- `VITE_API_URL=https://api.example.invalid bun run --cwd frontend build`: passed.
+- `bun test` from `backend`: 71 passed, 8 skipped, 0 failed.
+- `git diff --check`: passed.
+
+### Concerns
+
+- The production build retains the existing Vite large-chunk warning.
+- Browser-specific GPU and request-lifecycle behavior remains unvalidated because this harness has no browser portal.
