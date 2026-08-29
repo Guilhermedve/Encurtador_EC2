@@ -71,8 +71,9 @@ export function AsciiFlowTrail() {
     let previousTime = 0
     let lastSample: { x: number; y: number } | null = null
 
-    function requestDraw() {
+    function requestDraw(continuous = false) {
       if (running) return
+      if (!continuous) previousTime = 0
       running = true
       frame = window.requestAnimationFrame(draw)
     }
@@ -163,14 +164,16 @@ export function AsciiFlowTrail() {
 
       const smooth = smoothRef.current
       const moving = Boolean(pointer && smooth && hasTrailMoved(smooth, pointer, 0.5))
-      if (pointsRef.current.length > 0 || moving) requestDraw()
+      if (pointsRef.current.length > 0 || moving) requestDraw(true)
     }
 
+    const resizeObserver = 'ResizeObserver' in window ? new ResizeObserver(resize) : null
     window.addEventListener('resize', resize)
     window.addEventListener('pointermove', handlePointerMove, { passive: true })
     window.addEventListener('pointerout', handlePointerOut)
     window.addEventListener('blur', resetPointer)
     window.addEventListener('scroll', resetPointer, { passive: true })
+    resizeObserver?.observe(canvas)
     resize()
 
     return () => {
@@ -180,6 +183,7 @@ export function AsciiFlowTrail() {
       window.removeEventListener('pointerout', handlePointerOut)
       window.removeEventListener('blur', resetPointer)
       window.removeEventListener('scroll', resetPointer)
+      resizeObserver?.disconnect()
       pointerRef.current = null
       smoothRef.current = null
       pointsRef.current = []
