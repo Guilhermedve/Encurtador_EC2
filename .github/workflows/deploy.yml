@@ -1,0 +1,265 @@
+name: Deploy
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    name: Validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    services:
+      azurite:
+        image: mcr.microsoft.com/azure-storage/azurite:3.37.0
+        ports:
+          - 10002:10002
+        options: >-
+          --health-cmd "node -e \"require('http').get('http://localhost:10002/devstoreaccount1/Tables',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))\""
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Type-check backend
+        run: bun run typecheck:backend
+
+      - name: Unit and integration tests
+        run: bun run test
+
+      - name: Azure Table persistence tests
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: UseDevelopmentStorage=true
+        run: bun run test:azure
+
+      - name: Build frontend
+        env:
+          VITE_API_URL: https://api.example.invalid
+        run: bun run build
+
+      - name: Assert no loopback API in bundle
+        run: |
+          if grep -rnE "localhost:3000|127\.0\.0\.1:3000|\[::1\]:3000" frontend/dist; then
+            echo "Loopback API URL found in production bundle"; exit 1
+          fi
+
+      - name: Build backend image
+        run: docker build --file backend/Dockerfile --tag encurtador-backend:test .
+
+      - name: Assert backend image runs as non-root
+        run: |
+          UID=$(docker run --rm --entrypoint id encurtador-backend:test -u)
+          if [ "$UID" = "0" ]; then echo "Backend image must not run as root"; exit 1; fi
+
+      - name: Create Azurite runtime table
+        env:
+          AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;TableEndpoint=http://127.0.0.1:10002/devstoreaccount1;"
+        run: |
+          bun -e "import { TableClient } from '@azure/data-tables'; const c = TableClient.fromConnectionString(process.env.AZURE_STORAGE_CONNECTION_STRING, 'linksruntime', { allowInsecureConnection: true }); await c.createTable(); console.log('created linksruntime');"
+
+      - name: Backend persistence smoke against Azurite
+        run: |
+          docker run --detach --rm --name encurtador-backend \
+            --add-host host.docker.internal:host-gateway \
+            -p 127.0.0.1:3000:3000 \
+            -e NODE_ENV=test \
+            -e LINK_REPOSITORY=azure-table \
+            -e AZURE_STORAGE_TABLE_NAME=linksruntime \
+            -e "AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;TableEndpoint=http://host.docker.internal:10002/devstoreaccount1;" \
+            encurtador-backend:test
+          for i in $(seq 1 20); do
+            if [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/health)" = "200" ]; then break; fi
+            sleep 1
+          done
+          HEALTH=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/health)
+          if [ "$HEALTH" != "200" ]; then echo "health=$HEALTH"; docker rm -f encurtador-backend; exit 1; fi
+          CODE=$(curl -s -X POST http://127.0.0.1:3000/api/links -H "Content-Type: application/json" -d '{"url":"https://example.com/azure-deployment-smoke"}' | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).code)}catch{e=>console.log('')}) )")
+          if [ -z "$CODE" ]; then echo "create failed"; docker rm -f encurtador-backend; exit 1; fi
+          LOCATION=$(curl -s -o /dev/null -w '%{redirect_url}' "http://127.0.0.1:3000/$CODE")
+          if [ "$LOCATION" != "https://example.com/azure-deployment-smoke" ]; then echo "redirect=$LOCATION"; docker rm -f encurtador-backend; exit 1; fi
+          docker rm -f encurtador-backend
+
+  publish_backend_image:
+    name: Publish backend image
+    needs: validate
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ vars.GHCR_BACKEND_IMAGE }}
+
+      - name: Compute image reference
+        id: ref
+        run: |
+          short_sha="${GITHUB_SHA:0:7}"
+          echo "ref=${GHCR_BACKEND_IMAGE}:sha-${short_sha}" >> "$GITHUB_OUTPUT"
+
+      - name: Build and push backend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: backend/Dockerfile
+          push: true
+          tags: ${{ steps.ref.outputs.ref }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  deploy_backend:
+    name: Deploy backend
+    needs: publish_backend_image
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Azure login
+        uses: azure/login@v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Container App
+        uses: azure/container-apps-deploy-action@v2
+        with:
+          imageToDeploy: ${{ needs.publish_backend_image.outputs.ref }}
+          containerAppName: ${{ vars.AZURE_CONTAINER_APP_NAME }}
+          resourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
+
+  deploy_frontend:
+    name: Deploy frontend
+    needs: deploy_backend
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Build frontend
+        env:
+          VITE_API_URL: ${{ vars.BACKEND_PUBLIC_URL }}
+        run: bun run build
+
+      - name: Assert no loopback API in bundle
+        run: |
+          if grep -rnE "localhost:3000|127\.0\.0\.1:3000|\[::1\]:3000" frontend/dist; then
+            echo "Loopback API URL found in production bundle"; exit 1
+          fi
+
+      - name: Upload to Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          action: upload
+          app_location: frontend/dist
+          api_location: ""
+          output_location: ""
+          skip_app_build: true
+
+  smoke:
+    name: Smoke test
+    needs:
+      - deploy_backend
+      - deploy_frontend
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Validate public URLs
+        env:
+          FRONTEND_PUBLIC_URL: ${{ vars.FRONTEND_PUBLIC_URL }}
+          BACKEND_PUBLIC_URL: ${{ vars.BACKEND_PUBLIC_URL }}
+        run: |
+          for url in "$FRONTEND_PUBLIC_URL" "$BACKEND_PUBLIC_URL"; do
+            case "$url" in
+              https://*) ;;
+              *) echo "Public URL must be HTTPS: $url"; exit 1 ;;
+            esac
+          done
+
+      - name: Health checks
+        env:
+          FRONTEND_PUBLIC_URL: ${{ vars.FRONTEND_PUBLIC_URL }}
+          BACKEND_PUBLIC_URL: ${{ vars.BACKEND_PUBLIC_URL }}
+        run: |
+          FRONTEND=$(curl -s -o /dev/null -w '%{http_code}' "$FRONTEND_PUBLIC_URL/")
+          BACKEND=$(curl -s -o /dev/null -w '%{http_code}' "$BACKEND_PUBLIC_URL/health")
+          echo "frontend=$FRONTEND backend=$BACKEND"
+          if [ "$FRONTEND" != "200" ] || [ "$BACKEND" != "200" ]; then exit 1; fi
+
+      - name: Create and reuse link
+        env:
+          BACKEND_PUBLIC_URL: ${{ vars.BACKEND_PUBLIC_URL }}
+        run: |
+          BODY=$(curl -s -X POST "$BACKEND_PUBLIC_URL/api/links" -H "Content-Type: application/json" -d '{"url":"https://example.com/azure-deployment-smoke"}')
+          CODE=$(echo "$BODY" | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).code)}catch{console.log('')}})")
+          STATUS=$(echo "$BODY" | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).reused?'200':'201')}catch{console.log('000')}})")
+          echo "first status=$STATUS code=$CODE"
+          if [ -z "$CODE" ]; then exit 1; fi
+          BODY2=$(curl -s -X POST "$BACKEND_PUBLIC_URL/api/links" -H "Content-Type: application/json" -d '{"url":"https://example.com/azure-deployment-smoke"}')
+          CODE2=$(echo "$BODY2" | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).code)}catch{console.log('')}})")
+          STATUS2=$(echo "$BODY2" | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).reused?'200':'201')}catch{console.log('000')}})")
+          echo "second status=$STATUS2 code=$CODE2"
+          if [ "$STATUS2" != "200" ] || [ "$CODE" != "$CODE2" ]; then exit 1; fi
+
+      - name: Redirect check
+        env:
+          BACKEND_PUBLIC_URL: ${{ vars.BACKEND_PUBLIC_URL }}
+        run: |
+          CODE=$(curl -s -X POST "$BACKEND_PUBLIC_URL/api/links" -H "Content-Type: application/json" -d '{"url":"https://example.com/azure-deployment-smoke"}' | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).code)}catch{console.log('')}})")
+          LOCATION=$(curl -s -o /dev/null -w '%{redirect_url}' "$BACKEND_PUBLIC_URL/$CODE")
+          echo "code=$CODE location=$LOCATION"
+          if [ "$LOCATION" != "https://example.com/azure-deployment-smoke" ]; then exit 1; fi
