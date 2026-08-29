@@ -109,7 +109,7 @@ jobs:
       contents: read
       packages: write
     env:
-      GHCR_BACKEND_IMAGE: ${{ vars.GHCR_BACKEND_IMAGE || format('ghcr.io/{0}-backend', toLower(github.repository)) }}
+      GHCR_BACKEND_IMAGE: ${{ vars.GHCR_BACKEND_IMAGE || 'ghcr.io/guilhermedve/encurtador_ec2-backend' }}
     steps:
       - uses: actions/checkout@v4
 
