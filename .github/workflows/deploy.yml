@@ -88,7 +88,7 @@ jobs:
             -e AZURE_STORAGE_TABLE_NAME=linksruntime \
             -e "AZURE_STORAGE_CONNECTION_STRING=DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;TableEndpoint=http://host.docker.internal:10002/devstoreaccount1;" \
             encurtador-backend:test
-          for i in $(seq 1 20); do
+          for _ in $(seq 1 20); do
             if [ "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/health)" = "200" ]; then break; fi
             sleep 1
           done
@@ -105,6 +105,8 @@ jobs:
     needs: validate
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    outputs:
+      ref: ${{ steps.ref.outputs.ref }}
     permissions:
       contents: read
       packages: write
@@ -221,6 +223,11 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
       - name: Validate public URLs
         env:
           FRONTEND_PUBLIC_URL: ${{ vars.FRONTEND_PUBLIC_URL }}
@@ -247,22 +254,33 @@ jobs:
         env:
           BACKEND_PUBLIC_URL: ${{ vars.BACKEND_PUBLIC_URL }}
         run: |
-          BODY=$(curl -s -X POST "$BACKEND_PUBLIC_URL/api/links" -H "Content-Type: application/json" -d '{"url":"https://example.com/azure-deployment-smoke"}')
-          CODE=$(echo "$BODY" | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).code)}catch{console.log('')}})")
-          STATUS=$(echo "$BODY" | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).reused?'200':'201')}catch{console.log('000')}})")
-          echo "first status=$STATUS code=$CODE"
-          if [ -z "$CODE" ]; then exit 1; fi
-          BODY2=$(curl -s -X POST "$BACKEND_PUBLIC_URL/api/links" -H "Content-Type: application/json" -d '{"url":"https://example.com/azure-deployment-smoke"}')
-          CODE2=$(echo "$BODY2" | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).code)}catch{console.log('')}})")
-          STATUS2=$(echo "$BODY2" | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).reused?'200':'201')}catch{console.log('000')}})")
-          echo "second status=$STATUS2 code=$CODE2"
-          if [ "$STATUS2" != "200" ] || [ "$CODE" != "$CODE2" ]; then exit 1; fi
+          FIRST_BODY=$(mktemp)
+          SECOND_BODY=$(mktemp)
+          trap 'rm -f "$FIRST_BODY" "$SECOND_BODY"' EXIT
+
+          FIRST_STATUS=$(curl -sS -o "$FIRST_BODY" -w '%{http_code}' \
+            -X POST "$BACKEND_PUBLIC_URL/api/links" \
+            -H "Content-Type: application/json" \
+            -d '{"url":"https://example.com/azure-deployment-smoke"}')
+          CODE=$(bun -e "const t=await Bun.file(process.argv[1]).text(); try { console.log(JSON.parse(t).code ?? '') } catch { console.log('') }" "$FIRST_BODY")
+          echo "first status=$FIRST_STATUS code=$CODE"
+          if { [ "$FIRST_STATUS" != "200" ] && [ "$FIRST_STATUS" != "201" ]; } || [ -z "$CODE" ]; then exit 1; fi
+
+          SECOND_STATUS=$(curl -sS -o "$SECOND_BODY" -w '%{http_code}' \
+            -X POST "$BACKEND_PUBLIC_URL/api/links" \
+            -H "Content-Type: application/json" \
+            -d '{"url":"https://example.com/azure-deployment-smoke"}')
+          CODE2=$(bun -e "const t=await Bun.file(process.argv[1]).text(); try { console.log(JSON.parse(t).code ?? '') } catch { console.log('') }" "$SECOND_BODY")
+          echo "second status=$SECOND_STATUS code=$CODE2"
+          if [ "$SECOND_STATUS" != "200" ] || [ "$CODE" != "$CODE2" ]; then exit 1; fi
 
       - name: Redirect check
         env:
           BACKEND_PUBLIC_URL: ${{ vars.BACKEND_PUBLIC_URL }}
         run: |
           CODE=$(curl -s -X POST "$BACKEND_PUBLIC_URL/api/links" -H "Content-Type: application/json" -d '{"url":"https://example.com/azure-deployment-smoke"}' | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).code)}catch{console.log('')}})")
-          LOCATION=$(curl -s -o /dev/null -w '%{redirect_url}' "$BACKEND_PUBLIC_URL/$CODE")
-          echo "code=$CODE location=$LOCATION"
-          if [ "$LOCATION" != "https://example.com/azure-deployment-smoke" ]; then exit 1; fi
+          REDIRECT=$(curl -s -o /dev/null -w '%{http_code} %{redirect_url}' "$BACKEND_PUBLIC_URL/$CODE")
+          STATUS=${REDIRECT%% *}
+          LOCATION=${REDIRECT#* }
+          echo "status=$STATUS code=$CODE location=$LOCATION"
+          if [ "$STATUS" != "302" ] || [ "$LOCATION" != "https://example.com/azure-deployment-smoke" ]; then exit 1; fi
