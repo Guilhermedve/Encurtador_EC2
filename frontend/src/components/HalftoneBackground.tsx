@@ -15,14 +15,18 @@ export function HalftoneBackground() {
     const container = containerRef.current
     if (!container) return
 
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
     const handleMouseMove = (e: MouseEvent) => {
       mouse.current = { x: e.clientX, y: e.clientY }
     }
     const handleMouseLeave = () => {
       mouse.current = null
     }
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('mouseleave', handleMouseLeave)
+    if (!reducedMotion) {
+      window.addEventListener('mousemove', handleMouseMove)
+      window.addEventListener('mouseleave', handleMouseLeave)
+    }
 
     const sketch = (p: p5) => {
       p.setup = () => {
@@ -30,10 +34,14 @@ export function HalftoneBackground() {
         canvas.parent(container)
         p.frameRate(30)
         p.noStroke()
+        if (reducedMotion) {
+          p.noLoop()
+        }
       }
 
       p.windowResized = () => {
         p.resizeCanvas(p.windowWidth, p.windowHeight)
+        if (reducedMotion) p.redraw()
       }
 
       p.draw = () => {
@@ -64,8 +72,10 @@ export function HalftoneBackground() {
     const instance = new p5(sketch)
 
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('mouseleave', handleMouseLeave)
+      if (!reducedMotion) {
+        window.removeEventListener('mousemove', handleMouseMove)
+        window.removeEventListener('mouseleave', handleMouseLeave)
+      }
       instance.remove()
     }
   }, [])

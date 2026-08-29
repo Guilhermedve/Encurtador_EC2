@@ -1,4 +1,5 @@
 import { AboutSection } from '../components/AboutSection'
+import { BottomBlur } from '../components/BottomBlur'
 import { DitheringOverlay } from '../components/DitheringOverlay'
 import { HalftoneBackground } from '../components/HalftoneBackground'
 import { Header } from '../components/Header'
@@ -10,6 +11,7 @@ export function HomePage() {
     <div className="relative min-h-screen bg-black text-white">
       <HalftoneBackground />
       <DitheringOverlay />
+      <BottomBlur />
       <Header />
 
       <main className="relative z-10 flex min-h-[calc(100vh-56px)] flex-col items-center justify-center px-5 pb-16 sm:px-6">

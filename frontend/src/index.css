@@ -35,3 +35,34 @@ html {
     scroll-behavior: auto;
   }
 }
+
+.bottom-blur {
+  background: linear-gradient(
+    to bottom,
+    rgb(0 0 0 / 0%) 0%,
+    rgb(0 0 0 / 30%) 58%,
+    rgb(0 0 0 / 78%) 100%
+  );
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 58%, black 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 58%, black 100%);
+}
+
+@supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .bottom-blur {
+    background: linear-gradient(
+      to bottom,
+      rgb(0 0 0 / 0%) 0%,
+      rgb(0 0 0 / 58%) 64%,
+      rgb(0 0 0 / 92%) 100%
+    );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bottom-blur {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
