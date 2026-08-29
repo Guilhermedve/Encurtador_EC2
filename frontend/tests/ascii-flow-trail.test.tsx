@@ -3,8 +3,11 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { AsciiFlowTrail } from '../src/components/ascii-flow-trail/AsciiFlowTrail'
 import {
   ASCII_TRAIL_CHARACTERS,
+  getTrailBounds,
   getTrailGlyph,
   getTrailIntensity,
+  hasTrailMoved,
+  isTrailPointerType,
 } from '../src/components/ascii-flow-trail/trailMath'
 
 describe('ASCII flow trail', () => {
@@ -18,6 +21,17 @@ describe('ASCII flow trail', () => {
     expect(getTrailGlyph(0.5)).toBe('=')
     expect(getTrailGlyph(1)).toBe('@')
     expect(ASCII_TRAIL_CHARACTERS).toBe(' .:-=+*#%@')
+    expect(hasTrailMoved({ x: 0, y: 0 }, { x: 3, y: 4 }, 5)).toBe(false)
+    expect(hasTrailMoved({ x: 0, y: 0 }, { x: 6, y: 0 }, 5)).toBe(true)
+    expect(getTrailBounds(points, 20, 100, 100)).toEqual({
+      left: 0,
+      top: 0,
+      right: 20,
+      bottom: 20,
+    })
+    expect(isTrailPointerType('mouse')).toBe(true)
+    expect(isTrailPointerType('pen')).toBe(true)
+    expect(isTrailPointerType('touch')).toBe(false)
   })
 
   test('renders a decorative transparent canvas', () => {

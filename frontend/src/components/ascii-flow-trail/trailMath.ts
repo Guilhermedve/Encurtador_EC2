@@ -6,6 +6,58 @@ export type TrailPoint = Readonly<{
   life: number
 }>
 
+type TrailPosition = Readonly<{
+  x: number
+  y: number
+}>
+
+export type TrailBounds = Readonly<{
+  left: number
+  top: number
+  right: number
+  bottom: number
+}>
+
+export function isTrailPointerType(pointerType: string): boolean {
+  return pointerType !== 'touch'
+}
+
+export function hasTrailMoved(
+  previous: TrailPosition,
+  next: TrailPosition,
+  minimumDistance: number,
+): boolean {
+  return Math.hypot(next.x - previous.x, next.y - previous.y) > minimumDistance
+}
+
+export function getTrailBounds(
+  points: readonly TrailPoint[],
+  radius: number,
+  width: number,
+  height: number,
+): TrailBounds | null {
+  if (points.length === 0) return null
+
+  let left = width
+  let top = height
+  let right = 0
+  let bottom = 0
+
+  for (const point of points) {
+    left = Math.min(left, point.x - radius)
+    top = Math.min(top, point.y - radius)
+    right = Math.max(right, point.x + radius)
+    bottom = Math.max(bottom, point.y + radius)
+  }
+
+  return {
+    left: Math.max(0, left),
+    top: Math.max(0, top),
+    right: Math.min(width, right),
+    bottom: Math.min(height, bottom),
+  }
+}
+
 export function getTrailIntensity(
   x: number,
   y: number,
