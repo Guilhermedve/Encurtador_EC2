@@ -114,14 +114,14 @@ export function AsciiScissorsHero({
     <div
       ref={wrapperRef}
       aria-hidden="true"
-      className="ascii-scissors-hero pointer-events-none relative h-[38svh] min-h-[280px] w-full overflow-hidden md:h-[min(70vh,720px)]"
+      className="ascii-scissors-hero pointer-events-none relative h-full min-h-[420px] w-full overflow-hidden lg:min-h-[560px]"
     >
       {webglAvailable ? (
         <Canvas
           fallback={<ScissorsFallback />}
           frameloop={animate ? 'always' : 'demand'}
           dpr={[1, 1.5]}
-          camera={{ position: [0, 0, 6.3], fov: 42, near: 0.1, far: 30 }}
+          camera={{ position: [0, 0.35, 11], fov: 33, near: 0.1, far: 40 }}
           gl={{ alpha: true, antialias: false, powerPreference: 'high-performance' }}
           onCreated={({ gl }) => setRendererCanvas(gl.domElement)}
         >

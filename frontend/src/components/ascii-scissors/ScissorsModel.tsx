@@ -44,7 +44,7 @@ export const ScissorsModel = forwardRef<ScissorsModelHandle>(
     }), [])
 
     return (
-      <group position={[-0.75, 0, 0]} rotation={[0, 0, -0.08]} scale={1.02}>
+      <group position={[-0.75, 0, 0]} rotation={[0, 0, -0.08]} scale={1.25}>
         <ScissorHalf halfRef={upperHalfRef} rotation={OPEN_BLADE_ANGLE} z={0.08} />
         <ScissorHalf halfRef={lowerHalfRef} rotation={-OPEN_BLADE_ANGLE} z={-0.08} />
         <mesh rotation={[Math.PI / 2, 0, 0]}>
