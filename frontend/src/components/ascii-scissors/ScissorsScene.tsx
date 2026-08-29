@@ -31,7 +31,6 @@ export function ScissorsScene({ animate, resolution }: ScissorsSceneProps) {
         fgColor="#ffffff"
         bgColor="transparent"
         characters=" .:-=+*#%@"
-        invert
         color={false}
         resolution={resolution}
       />
