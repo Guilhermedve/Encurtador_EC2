@@ -173,6 +173,16 @@ jobs:
           imageToDeploy: ${{ needs.publish_backend_image.outputs.ref }}
           containerAppName: ${{ vars.AZURE_CONTAINER_APP_NAME }}
           resourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
+          targetPort: 3000
+          environmentVariables: >-
+            NODE_ENV=production
+            LINK_REPOSITORY=azure-table
+            AZURE_STORAGE_ACCOUNT_URL=${{ vars.AZURE_STORAGE_ACCOUNT_URL }}
+            AZURE_STORAGE_TABLE_NAME=links
+            PORT=3000
+            FRONTEND_URL=${{ vars.FRONTEND_PUBLIC_URL }}
+            PUBLIC_BASE_URL=${{ vars.BACKEND_PUBLIC_URL }}
+            TRUST_PROXY=true
 
   deploy_frontend:
     name: Deploy frontend

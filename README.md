@@ -156,7 +156,8 @@ compartilhados entre réplicas**; o Container App roda com `maxReplicas=1`.
 Secrets (4): `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`,
 `AZURE_STATIC_WEB_APPS_API_TOKEN`.
 
-Variables (5): `AZURE_RESOURCE_GROUP`, `AZURE_CONTAINER_APP_NAME`,
+Variables (6): `AZURE_RESOURCE_GROUP`, `AZURE_CONTAINER_APP_NAME`,
+`AZURE_STORAGE_ACCOUNT_URL` (URL HTTPS da conta Table Storage),
 `BACKEND_PUBLIC_URL` (HTTPS do Container App), `FRONTEND_PUBLIC_URL` (HTTPS do
 Static Web App) e `GHCR_BACKEND_IMAGE` (caminho completo da imagem, ex.:
 `ghcr.io/guilhermedve/encurtador_ec2-backend`).
