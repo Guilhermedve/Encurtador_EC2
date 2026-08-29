@@ -50,6 +50,7 @@ Desktop.ini
 docs/*
 !docs/superpowers/
 docs/superpowers/plans/
+docs/superpowers/specs/
 
 # Terraform local state and runtime files
 **/.terraform/*
