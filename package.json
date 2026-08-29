@@ -6,6 +6,8 @@
     "dev:backend": "bun run --cwd backend dev",
     "dev:frontend": "bun run --cwd frontend dev",
     "test": "bun run --cwd backend test",
+    "test:azure": "bun run --cwd backend test:azure",
+    "typecheck:backend": "bunx tsc --project backend/tsconfig.json --noEmit",
     "build": "bun run --cwd frontend build"
   }
 }

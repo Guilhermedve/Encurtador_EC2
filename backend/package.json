@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "bun --watch src/index.ts",
     "start": "bun src/index.ts",
-    "test": "bun test"
+    "test": "bun test",
+    "test:azure": "bun test tests/azure-table-link.repository.integration.test.ts"
   },
   "dependencies": {
     "@azure/data-tables": "13.3.2",

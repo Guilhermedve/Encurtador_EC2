@@ -15,6 +15,7 @@ export function createLinkRepository(config: BackendEnv): LinkRepository {
     const client = TableClient.fromConnectionString(
       config.azureStorageConnectionString,
       config.azureStorageTableName,
+      { allowInsecureConnection: true },
     )
     return new AzureTableLinkRepository(new AzureLinkTableClient(client))
   }
