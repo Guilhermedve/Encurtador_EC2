@@ -1,6 +1,8 @@
-import { HalftoneBackground } from '../components/HalftoneBackground'
+import { AboutSection } from '../components/AboutSection'
 import { DitheringOverlay } from '../components/DitheringOverlay'
+import { HalftoneBackground } from '../components/HalftoneBackground'
 import { Header } from '../components/Header'
+import { SiteFooter } from '../components/SiteFooter'
 import { UrlShortenerCard } from '../components/UrlShortenerCard'
 
 export function HomePage() {
@@ -8,7 +10,6 @@ export function HomePage() {
     <div className="relative min-h-screen bg-black text-white">
       <HalftoneBackground />
       <DitheringOverlay />
-
       <Header />
 
       <main className="relative z-10 flex min-h-[calc(100vh-56px)] flex-col items-center justify-center px-5 pb-16 sm:px-6">
@@ -39,11 +40,8 @@ export function HomePage() {
         </div>
       </main>
 
-      <footer className="relative z-10 flex h-10 items-center justify-center">
-        <span className="text-xs font-medium tracking-wide text-white/40">
-          © 2026 Encurtador EC2
-        </span>
-      </footer>
+      <AboutSection />
+      <SiteFooter />
     </div>
   )
 }
