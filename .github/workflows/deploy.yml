@@ -94,7 +94,7 @@ jobs:
           done
           HEALTH=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/health)
           if [ "$HEALTH" != "200" ]; then echo "health=$HEALTH"; docker rm -f encurtador-backend; exit 1; fi
-          CODE=$(curl -s -X POST http://127.0.0.1:3000/api/links -H "Content-Type: application/json" -d '{"url":"https://example.com/azure-deployment-smoke"}' | bun -e "process.stdin.text().then(t=>{try{console.log(JSON.parse(t).code)}catch(e=>console.log(''))})")
+          CODE=$(curl -s -X POST http://127.0.0.1:3000/api/links -H "Content-Type: application/json" -d '{"url":"https://example.com/azure-deployment-smoke"}' | bun -e "const t = await Bun.stdin.text(); console.log(JSON.parse(t).code)")
           if [ -z "$CODE" ]; then echo "create failed"; docker rm -f encurtador-backend; exit 1; fi
           LOCATION=$(curl -s -o /dev/null -w '%{redirect_url}' "http://127.0.0.1:3000/$CODE")
           if [ "$LOCATION" != "https://example.com/azure-deployment-smoke" ]; then echo "redirect=$LOCATION"; docker rm -f encurtador-backend; exit 1; fi
