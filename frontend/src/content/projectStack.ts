@@ -13,7 +13,9 @@ export const PROJECT_STACK: readonly StackGroup[] = [
       'TYPESCRIPT 5.7',
       'VITE 6',
       'TAILWIND CSS 4',
-      'P5.JS / CANVAS',
+      'THREE.JS',
+      'REACT THREE FIBER',
+      'DREI / ASCII RENDERER',
     ],
   },
   {

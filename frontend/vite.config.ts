@@ -29,7 +29,7 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           manualChunks: {
-            p5: ['p5'],
+            'three-vendor': ['three', '@react-three/fiber', '@react-three/drei'],
           },
         },
       },

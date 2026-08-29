@@ -28,7 +28,9 @@ describe('recruiter-facing project section', () => {
       'TYPESCRIPT 5.7',
       'VITE 6',
       'TAILWIND CSS 4',
-      'P5.JS / CANVAS',
+      'THREE.JS',
+      'REACT THREE FIBER',
+      'DREI / ASCII RENDERER',
       'BUN',
       'ELYSIA',
       'AZURE TABLE STORAGE',
@@ -41,7 +43,7 @@ describe('recruiter-facing project section', () => {
       expect(markup).toContain(technology)
     }
 
-    expect(markup).not.toContain('THREE.JS')
+    expect(markup).not.toContain('P' + '5.JS / CANVAS')
   })
 
   test('renders two safe external LinkedIn links', () => {
