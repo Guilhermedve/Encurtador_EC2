@@ -5,7 +5,9 @@ const ALPHABET =
 // são descartados (amostragem por rejeição) para evitar viés modular.
 const REJECTION_THRESHOLD = 248
 
-export function generateCode(size = 9): string {
+export const SHORT_CODE_SIZE = 8
+
+export function generateCode(size = SHORT_CODE_SIZE): string {
   let result = ''
   const buffer = new Uint8Array(size)
 

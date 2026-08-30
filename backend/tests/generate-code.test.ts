@@ -4,8 +4,8 @@ import { generateCode } from '../src/utils/generate-code'
 const BASE62 = /^[0-9a-zA-Z]+$/
 
 describe('generateCode', () => {
-  it('gera exatamente nove caracteres por padrão', () => {
-    expect(generateCode()).toHaveLength(9)
+  it('gera exatamente oito caracteres por padrão', () => {
+    expect(generateCode()).toHaveLength(8)
   })
 
   it('respeita o tamanho solicitado', () => {

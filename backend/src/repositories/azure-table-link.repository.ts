@@ -59,7 +59,13 @@ export class AzureTableLinkRepository implements LinkRepository {
     )
     if (existing) {
       if (existing.originalUrl === link.originalUrl) {
-        return { status: 'url_exists', link }
+        return {
+          status: 'url_exists',
+          link: {
+            code: existing.code,
+            originalUrl: existing.originalUrl,
+          },
+        }
       }
       throw new LinkStorageIntegrityError('find_by_url')
     }
