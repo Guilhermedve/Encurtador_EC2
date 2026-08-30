@@ -74,7 +74,13 @@ describeWhenConfigured('AzureTableLinkRepository against Azurite', () => {
       originalUrl: 'https://azurite.com/reuso',
     })
 
-    expect(result.status).toBe('url_exists')
+    expect(result).toEqual({
+      status: 'url_exists',
+      link: {
+        code: 'BBBBBBBBB',
+        originalUrl: 'https://azurite.com/reuso',
+      },
+    })
   })
 
   it('returns one created and one url_exists for concurrent inserts', async () => {
@@ -92,8 +98,17 @@ describeWhenConfigured('AzureTableLinkRepository against Azurite', () => {
       }),
     ])
 
-    const statuses = [a.status, b.status].sort()
-    expect(statuses).toEqual(['created', 'url_exists'])
+    const created = [a, b].find((result) => result.status === 'created')
+    const reused = [a, b].find((result) => result.status === 'url_exists')
+
+    expect(created).toBeDefined()
+    expect(reused).toBeDefined()
+
+    if (created?.status !== 'created' || reused?.status !== 'url_exists') {
+      throw new Error('Expected one created result and one reused result')
+    }
+
+    expect(reused.link).toEqual(created.link)
   })
 
   it('returns code_collision when only the code is occupied', async () => {

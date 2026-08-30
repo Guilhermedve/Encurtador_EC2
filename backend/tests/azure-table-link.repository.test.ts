@@ -100,7 +100,13 @@ describe('AzureTableLinkRepository.saveIfAbsent', () => {
       originalUrl: 'https://exemplo.com',
     })
 
-    expect(result.status).toBe('url_exists')
+    expect(result).toEqual({
+      status: 'url_exists',
+      link: {
+        code: 'AAAAAAAAA',
+        originalUrl: 'https://exemplo.com',
+      },
+    })
     expect(fake.transactions).toHaveLength(0)
   })
 
