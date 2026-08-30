@@ -32,21 +32,21 @@ describe('LinkService.create', () => {
   it('cria um novo link e monta a URL curta sem barra duplicada', async () => {
     const service = new LinkService(
       new InMemoryLinkRepository(),
-      queuedGenerator(['AAAAAAAAA']),
+      queuedGenerator(['AAAAAAAA']),
     )
 
     const result = await service.create('https://exemplo.com/pagina')
 
     expect(result.reused).toBe(false)
-    expect(result.code).toBe('AAAAAAAAA')
-    expect(result.shortUrl).toBe('http://localhost:3000/AAAAAAAAA')
-    expect(result.shortUrl).not.toContain('//AAAAAAAAA')
+    expect(result.code).toBe('AAAAAAAA')
+    expect(result.shortUrl).toBe('http://localhost:3000/AAAAAAAA')
+    expect(result.shortUrl).not.toContain('//AAAAAAAA')
   })
 
   it('reutiliza o vínculo quando a URL normalizada já existe', async () => {
     const service = new LinkService(
       new InMemoryLinkRepository(),
-      queuedGenerator(['AAAAAAAAA', 'BBBBBBBBB']),
+      queuedGenerator(['AAAAAAAA', 'BBBBBBBB']),
     )
 
     const first = await service.create('https://exemplo.com')
@@ -61,28 +61,28 @@ describe('LinkService.create', () => {
   it('tenta novamente quando o código colide', async () => {
     const repository = new InMemoryLinkRepository()
     await repository.saveIfAbsent({
-      code: 'AAAAAAAAA',
+      code: 'AAAAAAAA',
       originalUrl: 'https://ocupado.com',
     })
 
     const service = new LinkService(
       repository,
-      queuedGenerator(['AAAAAAAAA', 'BBBBBBBBB']),
+      queuedGenerator(['AAAAAAAA', 'BBBBBBBB']),
     )
 
     const result = await service.create('https://novo.com')
 
-    expect(result.code).toBe('BBBBBBBBB')
+    expect(result.code).toBe('BBBBBBBB')
   })
 
   it('falha depois de dez colisões', async () => {
     const repository = new InMemoryLinkRepository()
     await repository.saveIfAbsent({
-      code: 'AAAAAAAAA',
+      code: 'AAAAAAAA',
       originalUrl: 'https://ocupado.com',
     })
 
-    const service = new LinkService(repository, queuedGenerator(['AAAAAAAAA']))
+    const service = new LinkService(repository, queuedGenerator(['AAAAAAAA']))
 
     await expect(service.create('https://novo.com')).rejects.toThrow(
       CodeGenerationExhaustedError,
@@ -103,19 +103,19 @@ describe('LinkService.create', () => {
       findByCode: async () => null,
       saveIfAbsent: async () => ({
         status: 'url_exists',
-        link: { code: 'BBBBBBBBB', originalUrl: 'https://exemplo.com' },
+        link: { code: 'BBBBBBBB', originalUrl: 'https://exemplo.com' },
       }),
     }
 
     const service = new LinkService(
       concurrentWinner,
-      queuedGenerator(['AAAAAAAAA']),
+      queuedGenerator(['AAAAAAAA']),
     )
 
     const result = await service.create('https://exemplo.com')
 
     expect(result.reused).toBe(true)
-    expect(result.code).toBe('BBBBBBBBB')
+    expect(result.code).toBe('BBBBBBBB')
   })
 })
 
@@ -124,7 +124,7 @@ describe('InMemoryLinkRepository.saveIfAbsent', () => {
     const repository = new InMemoryLinkRepository()
 
     const result = await repository.saveIfAbsent({
-      code: 'AAAAAAAAA',
+      code: 'AAAAAAAA',
       originalUrl: 'https://novo.com',
     })
 
@@ -134,30 +134,30 @@ describe('InMemoryLinkRepository.saveIfAbsent', () => {
   it('returns url_exists when the URL is already stored', async () => {
     const repository = new InMemoryLinkRepository()
     await repository.saveIfAbsent({
-      code: 'AAAAAAAAA',
+      code: 'AAAAAAAA',
       originalUrl: 'https://novo.com',
     })
 
     const result = await repository.saveIfAbsent({
-      code: 'BBBBBBBBB',
+      code: 'BBBBBBBB',
       originalUrl: 'https://novo.com',
     })
 
     expect(result.status).toBe('url_exists')
     if (result.status === 'url_exists') {
-      expect(result.link.code).toBe('AAAAAAAAA')
+      expect(result.link.code).toBe('AAAAAAAA')
     }
   })
 
   it('returns code_collision when the code is occupied', async () => {
     const repository = new InMemoryLinkRepository()
     await repository.saveIfAbsent({
-      code: 'AAAAAAAAA',
+      code: 'AAAAAAAA',
       originalUrl: 'https://um.com',
     })
 
     const result = await repository.saveIfAbsent({
-      code: 'AAAAAAAAA',
+      code: 'AAAAAAAA',
       originalUrl: 'https://outro.com',
     })
 

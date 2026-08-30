@@ -111,11 +111,15 @@ describe('AzureTableLinkRepository.saveIfAbsent', () => {
   })
 
   it('returns url_exists after a transaction conflict with a matching URL', async () => {
+    let urlReads = 0
     const fake = new FakeLinkTableClient({
-      getEntity: (partitionKey, rowKey) =>
-        rowKey.startsWith('url:')
-          ? urlIndexEntity('https://exemplo.com', 'AAAAAAAAA')
-          : null,
+      getEntity: (partitionKey, rowKey) => {
+        if (!rowKey.startsWith('url:')) return null
+        urlReads++
+        return urlReads === 1
+          ? null
+          : urlIndexEntity('https://exemplo.com', 'AAAAAAAA')
+      },
       createAtomically: () => {
         throw new LinkTableConflictError()
       },
@@ -123,11 +127,18 @@ describe('AzureTableLinkRepository.saveIfAbsent', () => {
     const repository = new AzureTableLinkRepository(fake)
 
     const result = await repository.saveIfAbsent({
-      code: 'AAAAAAAAA',
+      code: 'BBBBBBBB',
       originalUrl: 'https://exemplo.com',
     })
 
-    expect(result.status).toBe('url_exists')
+    expect(result).toEqual({
+      status: 'url_exists',
+      link: {
+        code: 'AAAAAAAA',
+        originalUrl: 'https://exemplo.com',
+      },
+    })
+    expect(fake.transactions).toHaveLength(1)
   })
 
   it('returns code_collision when only the code is occupied', async () => {
