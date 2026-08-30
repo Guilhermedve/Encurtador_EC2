@@ -67,9 +67,25 @@ describe('POST /api/links', () => {
     const body = await response.json()
 
     expect(response.status).toBe(201)
-    expect(body.code).toHaveLength(9)
+    expect(body.code).toMatch(/^[0-9a-zA-Z]{8}$/)
     expect(body.originalUrl).toBe('https://exemplo.com/nova')
     expect(body.shortUrl).toBe(`http://localhost:3000/${body.code}`)
+  })
+
+  it('preserva um código legado de nove caracteres ao reutilizar a URL', async () => {
+    const repository = new InMemoryLinkRepository()
+    await repository.saveIfAbsent({
+      code: 'LEGACY999',
+      originalUrl: 'https://exemplo.com/legado',
+    })
+    const app = makeApp(repository)
+
+    const response = await postLink(app, 'https://exemplo.com/legado')
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body.code).toBe('LEGACY999')
+    expect(body.shortUrl).toBe('http://localhost:3000/LEGACY999')
   })
 
   it('reutiliza a URL equivalente retornando 200 e o mesmo código', async () => {

@@ -1,5 +1,5 @@
 import { env } from '../config/env'
-import { generateCode } from '../utils/generate-code'
+import { generateCode, SHORT_CODE_SIZE } from '../utils/generate-code'
 import { normalizeHttpsUrl } from '../utils/normalize-url'
 import type { LinkRepository } from '../repositories/link.repository'
 
@@ -18,7 +18,6 @@ export interface CreateLinkResult {
 }
 
 const MAX_ATTEMPTS = 10
-const CODE_SIZE = 9
 
 export class LinkService {
   constructor(
@@ -40,7 +39,7 @@ export class LinkService {
     }
 
     for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const code = this.generate(CODE_SIZE)
+      const code = this.generate(SHORT_CODE_SIZE)
 
       const saved = await this.repository.saveIfAbsent({ code, originalUrl })
       if (saved.status === 'code_collision') continue

@@ -13,6 +13,22 @@ function queuedGenerator(codes: string[]): () => string {
 }
 
 describe('LinkService.create', () => {
+  it('solicita códigos de oito caracteres para novos links', async () => {
+    const requestedSizes: Array<number | undefined> = []
+    const service = new LinkService(
+      new InMemoryLinkRepository(),
+      (size) => {
+        requestedSizes.push(size)
+        return 'A'.repeat(size ?? 0)
+      },
+    )
+
+    const result = await service.create('https://exemplo.com/oito')
+
+    expect(requestedSizes).toEqual([8])
+    expect(result.code).toBe('AAAAAAAA')
+  })
+
   it('cria um novo link e monta a URL curta sem barra duplicada', async () => {
     const service = new LinkService(
       new InMemoryLinkRepository(),
